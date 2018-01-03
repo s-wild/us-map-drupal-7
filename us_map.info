@@ -1,0 +1,7 @@
+name = US Map
+description = US Map Module.
+core = 7.x
+package = US Map Module
+core = 7.x
+files[] = us_map.install
+files[] = us_map.module

@@ -1,0 +1,107 @@
+<?php
+/**
+ * @file
+ * US Map Module.
+ * @author - Simon Wild, simonwild@protonmail.com
+ */
+
+ /**
+  * Implements hook_node_info()
+  */
+ function us_map_node_info() {
+     return array(
+         'state' => array(
+             'name' => t('States'),
+             'base' => 'state',
+             'description' => t('You can define state settings here.'),
+             'has_title' => TRUE,
+             'title_label' => t('State title')
+          )
+     );
+ }
+
+ /**
+  * Implement hook_form()
+  */
+ function us_map_form($node, $form_state) {
+     return node_content_form($node, $form_state);
+ }
+
+ /**
+  * Implements hook_block_info().
+  */
+ function us_map_block_info() {
+   $blocks['us-map'] = array(
+     'info' => t('US Map')
+   );
+   return $blocks;
+ }
+
+ /**
+  * Implements hook_block_view().
+  */
+
+  function us_map_block_view($delta = '') {
+    $block = array();
+
+    switch ($delta) {
+      case 'us-map':
+        $block['subject'] = t('Testing block');
+        $block['content'] = array(
+          '#markup' => us_map_block_content(),
+          '#attached' => array(
+            'js' => array(
+              drupal_get_path('module', 'us_map') . '/us-map-library/lib/raphael.js',
+              drupal_get_path('module', 'us_map') . '/us-map-library/color.jquery.js',
+              drupal_get_path('module', 'us_map') . '/us-map-library/lib/jquery.usmap-state-names.js',
+              drupal_get_path('module', 'us_map') . '/us_map.js',
+            ),
+          ),
+        );
+        break;
+    }
+    return $block;
+  }
+
+  function us_map_block_content() {
+    $output = "";
+    $node_type = "state"; // can find this on the node type's "edit" screen in the Drupal admin section.
+
+    $result = db_query("SELECT nid FROM {node} WHERE type = :type", array(
+      ':type' => 'state',
+    ));
+
+    $records = $result->fetchAll();
+
+    if(!empty($records)){
+      $i = 0;
+      $len = count($records);
+      $seperator = "";
+      $stateStyles = "";
+      foreach ($records as $record) {
+        // Adjust seperator depending on loop counter.
+          if ($i == $len - 1) {
+              // last
+              $seperator = "";
+          } else { // Other
+            $seperator = ",";
+          }
+          $i++;
+          $stateStyles.= "'" . strtoupper(node_load($record->nid)->usmapcustomtype_state_abrivation[LANGUAGE_NONE][0]['safe_value']) . "': {fill: ";
+          $stateStyles.='"' . strtoupper(node_load($record->nid)->usmapcustomtype_state_bg_hex[LANGUAGE_NONE][0]['safe_value']) . '"}' . $seperator;
+
+      }
+      // dpm($stateStyles);
+    }
+    // dpm($stateStyles);
+    //'MD': {fill: 'yellow'},
+    $output.='<div data-states="' . $stateStyles . '" id="us-map" style="width: 930px; height: 930px; margin: 0 auto;"></div>';
+    $output.="<script>jQuery('#us-map').usmap({
+      showLabels: true,
+      stateStyles: {fill: '#bcbdbe', stroke: '#fff'},
+      stateSpecificStyles: {" . $stateStyles . "}
+    });</script>";
+
+    return $output;
+
+  }

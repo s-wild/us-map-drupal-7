@@ -1,0 +1,93 @@
+<?php
+/**
+ * @file
+ * US Map Install File.
+ * @author - Simon Wild, simonwild@protonmail.com
+ */
+
+/**
+ * Implements hook_install().
+ */
+function us_map_install() {
+  node_types_rebuild();
+  $types = node_type_get_types();
+  node_add_body_field($types['state']);
+  add_custom_fields();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function us_map_uninstall() {
+    $ournewtype = 'state';
+    $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+    $result = db_query($sql, array(':type' => $ournewtype));
+    $nodeids = array();
+    foreach ($result as $row) {
+        $nodeids[] = $row->nid;
+    }
+    node_delete_multiple($nodeids);
+    node_type_delete($ournewtype);
+}
+
+function _usmapcustomtype_installed_fields() {
+    $t = get_t();
+    return array(
+        'usmapcustomtype_state_abrivation' => array(
+            'field_name' => 'usmapcustomtype_state_abrivation',
+            'label' => $t('State Abrivation'),
+            'type' => 'text'
+        ),
+        'usmapcustomtype_state_bg_hex' => array(
+            'field_name' => 'usmapcustomtype_state_bg_hex',
+            'label' => $t('State Hex Code'),
+            'type' => 'text'
+        )
+    );
+}
+
+function _usmapcustomtype_installed_instances() {
+    $t = get_t();
+    return array(
+        'usmapcustomtype_state_abrivation' => array(
+            'field_name' => 'usmapcustomtype_state_abrivation',
+            'type' => 'text',
+            'label' => $t('State Abrivation'),
+            'widget' => array(
+                'type' => 'text_textfield'
+            ),
+            'display' => array(
+                'example_node_list' => array(
+                    'label' => $t('State Abrivation'),
+                    'type' => 'text'
+                )
+            )
+        ),
+        'usmapcustomtype_state_bg_hex' => array(
+            'field_name' => 'usmapcustomtype_state_bg_hex',
+            'type' => 'text',
+            'label' => $t('State BG Hex'),
+            'widget' => array(
+                'type' => 'text_textfield'
+            ),
+            'display' => array(
+                'example_node_list' => array(
+                    'label' => $t('State BG Hex Code'),
+                    'type' => 'text'
+                )
+            )
+        )
+    );
+}
+
+function add_custom_fields() {
+    foreach (_usmapcustomtype_installed_fields() as $field) {
+        field_create_field($field);
+    }
+    foreach (_usmapcustomtype_installed_instances() as $fieldinstance) {
+        $fieldinstance['entity_type'] = 'node';
+        $fieldinstance['bundle'] = 'state';
+        print_r($fieldinstance);
+        field_create_instance($fieldinstance);
+    }
+}
